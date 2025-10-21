@@ -10,7 +10,7 @@ public class SobelEdgeDetection implements EdgeDetectionAlgorithm {
         }
         int originalImageWidth = image.getWidth();
         int originalImageHeight = image.getHeight();
-        BufferedImage grayscaledImage = new BufferedImage(originalImageWidth, originalImageHeight, BufferedImage.TYPE_INT_RGB);
+        BufferedImage sobelEdgeImage = new BufferedImage(originalImageWidth, originalImageHeight, BufferedImage.TYPE_INT_RGB);
         // turn into grayscale image
         for (int i = 0; i < originalImageWidth; i++) {
             for (int j = 0; j < originalImageHeight; j++) {
@@ -21,7 +21,7 @@ public class SobelEdgeDetection implements EdgeDetectionAlgorithm {
                 int gray = (int)Math.round(red*0.30 + green*0.59 + blue*0.11);
                 gray = Math.max(0, Math.min(255, gray));
                 int newRGB = (gray << 16) | (gray << 8) | gray;
-                grayscaledImage.setRGB(i, j, newRGB);
+                sobelEdgeImage.setRGB(i, j, newRGB);
             }
         }
         // Sobel edge detection algorithm
@@ -30,7 +30,7 @@ public class SobelEdgeDetection implements EdgeDetectionAlgorithm {
         int[][] gyKernel = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
 
         // algorithm
-        BufferedImage sobleEdgeImage = new BufferedImage(originalImageWidth, originalImageHeight, BufferedImage.TYPE_INT_RGB);
+        BufferedImage output = new BufferedImage(originalImageWidth, originalImageHeight, BufferedImage.TYPE_INT_RGB);
 
         for (int x = 1; x < originalImageWidth - 1; x++) {
             for (int y = 1; y < originalImageHeight - 1; y++) {
@@ -38,9 +38,9 @@ public class SobelEdgeDetection implements EdgeDetectionAlgorithm {
                 int gy = 0;
 
                 // apply Sobel kernels
-                for (int i = 0; i <= 1; i++) {
-                    for (int j = 0; j <= 1; j++) {
-                        int rgb = grayscaledImage.getRGB(x + i, y + j);
+                for (int i = -1; i <= 1; i++) {
+                    for (int j = -1; j <= 1; j++) {
+                        int rgb = sobelEdgeImage.getRGB(x + i, y + j);
                         int gray = rgb & 0xff;
                         gx += gray * gxKernel[i + 1][j + 1];
                         gy += gray * gyKernel[i + 1][j + 1];
@@ -48,11 +48,12 @@ public class SobelEdgeDetection implements EdgeDetectionAlgorithm {
                 }
 
                 int magnitude = (int)Math.min(255, Math.sqrt(gx * gx + gy * gy));
+
                 int newRGB = (magnitude << 16) | (magnitude << 8) | magnitude;
-                sobleEdgeImage.setRGB(x, y, newRGB);
+                output.setRGB(x, y, newRGB);
             }
         }
 
-        return sobleEdgeImage;
+        return output;
     }
 }
