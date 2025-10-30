@@ -1,5 +1,6 @@
 package bg.sofia.uni.fmi.mjt.frauddetector.analyzer;
 
+import bg.sofia.uni.fmi.mjt.frauddetector.rule.FrequencyRule;
 import bg.sofia.uni.fmi.mjt.frauddetector.rule.Rule;
 import bg.sofia.uni.fmi.mjt.frauddetector.transaction.Channel;
 import bg.sofia.uni.fmi.mjt.frauddetector.transaction.Transaction;
@@ -7,10 +8,7 @@ import bg.sofia.uni.fmi.mjt.frauddetector.transaction.Transaction;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.Reader;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.io.UncheckedIOException;
 
@@ -72,11 +70,37 @@ public class TransactionAnalyzerImpl implements TransactionAnalyzer {
 
     @Override
     public double accountRating(String accountId) {
-        throw new IllegalArgumentException("Method is not implemented yet.");
+        if (accountId == null) {
+            throw new IllegalArgumentException("AccountID argument shall not be null");
+        }
+        double resultRating = 0.0;
+        List<Transaction> transactionList = this.transactions.stream()
+                .filter(t -> t.accountID().equals(accountId))
+                .toList();
+        for (Rule rule : this.rules) {
+            if(rule.applicable(transactionList)) {
+                resultRating += rule.weight();
+            }
+        }
+        return resultRating;
     }
 
     @Override
     public SortedMap<String, Double> accountsRisk() {
-        throw new IllegalArgumentException("Method is not implemented yet.");
+        Map<String, Double> result = new HashMap<>();
+        for (String id : allAccountIDs()) {
+            result.put(id, accountRating(id));
+        }
+
+        Comparator<String> byRiskDescending = (a1, a2) -> {
+            int cmp = result.get(a2).compareTo(result.get(a1));
+            if (cmp == 0) return a1.compareTo(a2);
+            return cmp;
+        };
+
+        SortedMap<String, Double> sorted = new TreeMap<>(byRiskDescending);
+        sorted.putAll(result);
+
+        return sorted;
     }
 }
